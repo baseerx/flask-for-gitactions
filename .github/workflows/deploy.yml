@@ -1,1 +1,31 @@
-testing
+name: Fetch and Deploy Code
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+
+jobs:
+  fetch-and-restart:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Install SSH client for connecting to the local Ubuntu system
+    - name: Install SSH client
+      run: sudo apt-get install -y openssh-client
+
+    # Fetch the code to a different directory on the local Ubuntu system
+    - name: Fetch code to custom directory
+      run: |
+        ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no baseerx@172.17.0.1 'mkdir -p /home/baseerx/flask-gitactions && rm -rf /home/baseerx/flask-gitactions/*'
+        scp -i ${{ secrets.SSH_PRIVATE_KEY }} -r $GITHUB_WORKSPACE/* baseerx@172.17.0.1:/home/baseerx/flask-gitactions
+
+    # Restart Nginx after fetching the code
+    - name: Restart Nginx
+      run: |
+        ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no baseerx@172.17.0.1 'sudo systemctl restart nginx'
+
