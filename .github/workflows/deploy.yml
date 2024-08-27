@@ -3,7 +3,7 @@ name: Fetch and Deploy Code
 on:
   push:
     branches:
-      - main  # Trigger the workflow on push to the main branch
+      - main
 
 jobs:
   fetch-and-restart:
@@ -14,18 +14,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Install SSH client for connecting to the local Ubuntu system
+    # Install SSH client
     - name: Install SSH client
       run: sudo apt-get install -y openssh-client
+
+    # Setup SSH keys
+    - name: Setup SSH keys
+      run: |
+        mkdir -p ~/.ssh/
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 172.17.0.1 >> ~/.ssh/known_hosts
+
+    # Test SSH connection
+    - name: Test SSH connection
+      run: |
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'
 
     # Fetch the code to a different directory on the local Ubuntu system
     - name: Fetch code to custom directory
       run: |
-        ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no baseerx@172.17.0.1 'mkdir -p /home/baseerx/flask-gitactions && rm -rf /home/baseerx/flask-gitactions/*'
-        scp -i ${{ secrets.SSH_PRIVATE_KEY }} -r $GITHUB_WORKSPACE/* baseerx@172.17.0.1:/home/baseerx/flask-gitactions
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no baseerx@172.17.0.1 'mkdir -p /home/flask-gitactions && rm -rf /home/flask-gitactions/*'
+        scp -i ~/.ssh/id_rsa -r $GITHUB_WORKSPACE/* baseerx@172.17.0.1:/home/flask-gitactions
 
     # Restart Nginx after fetching the code
     - name: Restart Nginx
       run: |
-        ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no baseerx@172.17.0.1 'sudo systemctl restart nginx'
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no baseerx@172.17.0.1 'sudo systemctl restart nginx'
 
