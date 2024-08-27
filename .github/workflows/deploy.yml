@@ -31,7 +31,7 @@ jobs:
       run: |
         ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'
 
-    # Fetch the code to a different directory on the local Ubuntu system
+    # Fetch the code to a different directory on the remote server
     - name: Fetch code to custom directory
       run: |
         ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'mkdir -p /home/flask-gitactions && rm -rf /home/flask-gitactions/*'
@@ -41,4 +41,6 @@ jobs:
     - name: Restart Nginx
       run: |
         ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'sudo systemctl restart nginx'
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
