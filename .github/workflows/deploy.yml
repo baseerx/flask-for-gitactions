@@ -18,14 +18,14 @@ jobs:
     - name: Setup SSH keys
       run: |
         mkdir -p ~/.ssh/
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/baseerx/DevOps/apps/flask-for-gitactions/baseer
-        chmod 600 /home/baseerx/DevOps/apps/flask-for-gitactions/baseer
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
         ssh-keyscan -H 172.17.0.1 >> ~/.ssh/known_hosts
 
     # Test SSH connection
     - name: Test SSH connection
       run: |
-        if ssh -i /home/baseerx/DevOps/apps/flask-for-gitactions/baseer -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'; then
+        if ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'; then
           echo "SSH connection test passed."
         else
           echo "SSH connection test failed."
