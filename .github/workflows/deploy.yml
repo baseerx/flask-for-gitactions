@@ -1,4 +1,4 @@
-name: Fetch and Deploy Code
+name: SSH Connection Test
 
 on:
   push:
@@ -6,14 +6,10 @@ on:
       - main
 
 jobs:
-  fetch-and-restart:
+  check-ssh-connection:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout the code from the repository
-    - name: Checkout code
-      uses: actions/checkout@v3
-
     # Install SSH client
     - name: Install SSH client
       run: sudo apt-get install -y openssh-client
@@ -22,25 +18,17 @@ jobs:
     - name: Setup SSH keys
       run: |
         mkdir -p ~/.ssh/
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/bsr
-        chmod 600 ~/.ssh/bsr
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/baseerx/DevOps/apps/flask-for-gitactions/baseer
+        chmod 600 /home/baseerx/DevOps/apps/flask-for-gitactions/baseer
         ssh-keyscan -H 172.17.0.1 >> ~/.ssh/known_hosts
 
     # Test SSH connection
     - name: Test SSH connection
       run: |
-        ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'
-
-    # Fetch the code to a different directory on the remote server
-    - name: Fetch code to custom directory
-      run: |
-        ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'mkdir -p /home/flask-gitactions && rm -rf /home/flask-gitactions/*'
-        scp -i ~/.ssh/bsr -r $GITHUB_WORKSPACE/* baseerx@172.17.0.1:/home/flask-gitactions
-
-    # Restart Nginx after fetching the code
-    - name: Restart Nginx
-      run: |
-        ssh -i ~/.ssh/bsr -o StrictHostKeyChecking=no baseerx@172.17.0.1 'sudo systemctl restart nginx'
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        if ssh -i /home/baseerx/DevOps/apps/flask-for-gitactions/baseer -o StrictHostKeyChecking=no baseerx@172.17.0.1 'echo "SSH connection successful!"'; then
+          echo "SSH connection test passed."
+        else
+          echo "SSH connection test failed."
+          exit 1
+        fi
 
